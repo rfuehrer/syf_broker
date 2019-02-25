@@ -7,3 +7,5 @@ Further information will follow.
 
 
 
+Preperation:
+- create file "sigfox.password" and save it with valid sigfox api password 
