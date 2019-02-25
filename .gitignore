@@ -1,0 +1,7 @@
+
+syf.db
+syf.csv
+*.pyc
+.DS_Store
+broker.timestamp
+sigfox.password
