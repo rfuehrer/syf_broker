@@ -5,6 +5,7 @@ import sys
 import time
 import json
 import sqlite3
+import configparser
 from datetime import datetime
 from pprint import pprint
 from pathlib import Path
@@ -13,38 +14,50 @@ sys.path.insert(0, os.path.abspath('./modules'))
 
 # https://support.sigfox.com/apidocs#operation/getDeviceMessagesListForDevice
 sigfox_timeframe_before_now=((60*60)*24)
-sigfox_timeframe_filename="broker.timestamp"
+#sigfox_timeframe_filename="broker.timestamp"
 sigfox_timeframe_timestamp=str(int(time.time()))
 syf_csv_filename="syf.csv"
 syf_sqlite3_filename="syf.db"
-sigfox_api_password_filename="sigfox.password"
+#sigfox_api_password_filename="sigfox.password"
 sigfox_timeframe_timestamp_lastcheck=0
 
-sigfox_api_login = '5c5bc0230499f57acb8060cc'
-sigfox_api_password = ''
+syf_config_filename = "syf.config"
+
+#sigfox_api_login = '5c5bc0230499f57acb8060cc'
+#sigfox_api_password = ''
 valid_data_length = 4
 max_accepted_version = 5
 
-
-# read password from file
-my_file = Path(sigfox_api_password_filename)
-if my_file.is_file():
-	print("Reading password file...")
-	file = open(sigfox_api_password_filename,"r")  
-	sigfox_api_password=str(file.read())
-	print("Password read...")
-	file.close() 
-
-# read saved timestamp
-my_file = Path(sigfox_timeframe_filename)
-if my_file.is_file():
-	print("Reading timestamp file...")
-	file = open(sigfox_timeframe_filename,"r")  
-	sigfox_timeframe_timestamp_lastcheck=str(file.read())
+config = configparser.ConfigParser()
+try:
+	print("Reading config file... (%s)" % (syf_config_filename))
+	config.read(syf_config_filename)
+except Exception as e :
+	print(str(e))
+try:
+	print("Reading config values...")
+	sigfox_api_login = config.get('api_access',"username")
+	sigfox_api_password = config.get('api_access',"password")
+	sigfox_timeframe_timestamp_lastcheck= config.get("api_access","last_timestamp")
+	proxy_active = config.get('proxy_access', "active")
+	proxy_pass = config.get('proxy_access', "password")
+	proxy_user = config.get('proxy_access', "username")
+	proxy_server_http = config.get('proxy_access',"server_http")
+	proxy_port_http = config.get('proxy_access',"port_http")
+	proxy_server_https = config.get('proxy_access',"server_https")
+	proxy_port_https = config.get('proxy_access',"port_https")
 	print("Timestamp read: %s" % (sigfox_timeframe_timestamp_lastcheck))
-	file.close() 
+except Exception as e :
+    print(str(e),' - could not read configuration file')
 
-s = SF.PySigfox(sigfox_api_login, sigfox_api_password)
+if proxy_active != "":
+    print("Setting proxy... (%s)" % (proxy_server_http))
+    proxyDict={ "http":"http://"+proxy_user+":"+proxy_pass+"@"+proxy_server_http+":"+proxy_port_http, "https" : "https://"+proxy_user+":"+proxy_pass+"@"+proxy_server_https+":"+proxy_port_https }
+else:
+    print("No proxy configured...")
+    proxyDict={ "http":"","https":"" }
+
+s = SF.PySigfox(sigfox_api_login, sigfox_api_password,proxyDict)
 
 sql3conn = sqlite3.connect(syf_sqlite3_filename)
 sql3c = sql3conn.cursor()
@@ -113,15 +126,19 @@ for device_type_id in s.device_types_list():
 sql3conn.commit()
 f.close()
 
+print("Writing new timestamp...(%s)" % (sigfox_timeframe_timestamp))
+cfgfile = open(syf_config_filename,'w')
+config.set("api_access","last_timestamp", str(sigfox_timeframe_timestamp))
+config.write(cfgfile)
+cfgfile.close()
+print("Timestamp was written...")
+
 print("")
 print("Summary:")
 print("=======================================================================")
 print("Last timestamp for check         : %s / %s" % (sigfox_timeframe_timestamp_lastcheck,time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(int(sigfox_timeframe_timestamp_lastcheck)))))
 print("New timestamp for check          : %s / %s" % (sigfox_timeframe_timestamp,time.strftime("%Y-%m-%d %H:%M:%S",time.localtime(int(sigfox_timeframe_timestamp)))))
 print("Time difference since last check : %s seconds" % (int(sigfox_timeframe_timestamp)-int(sigfox_timeframe_timestamp_lastcheck)))
-file = open(sigfox_timeframe_filename,"w")  
-file.write(sigfox_timeframe_timestamp) 
-file.close() 
 print("Number of devices                : %s" % str(count_all_devices))
 print("Number of all messages           : %s" % str(count_all_messages))
 print("Number of valid messages         : %s" % str(count_valid_messages))

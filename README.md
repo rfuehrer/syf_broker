@@ -8,4 +8,18 @@ Further information will follow.
 
 
 Preperation:
-- create file "sigfox.password" and save it with valid sigfox api password 
+- create file "syf.config" with following fields
+
+[api_access]
+username = <sigfox api access username>
+password = <sigfox api access username>
+last_timestamp = <value is updated by script / last timestamp of update>
+
+[proxy_access]
+active = <proxy on/off: empty string=no proxy>
+username = <proxy access username>
+password = <proxy access password>
+server_http = <http proxy server name>
+port_http = <http proxy server port>
+server_https = <https proxy server name>
+port_https = <https proxy server port>

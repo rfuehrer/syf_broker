@@ -5,3 +5,4 @@ syf.csv
 .DS_Store
 broker.timestamp
 sigfox.password
+syf.config
