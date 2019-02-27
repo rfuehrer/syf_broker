@@ -1,0 +1,14 @@
+[api_access]
+username = [username]
+password = [password]
+last_timestamp = 0
+
+[proxy_access]
+active = [yes|no]
+username = [username]
+password = [password]
+server_http = [server]
+port_http = [port]
+server_https = [server]
+port_https = [port]
+

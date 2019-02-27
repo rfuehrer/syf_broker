@@ -16,7 +16,7 @@ password = <sigfox api access username>
 last_timestamp = <value is updated by script / last timestamp of update>
 
 [proxy_access]
-active = <proxy on/off: empty string=no proxy>
+active = <proxy on/off: "yes"=proxy on>
 username = <proxy access username>
 password = <proxy access password>
 server_http = <http proxy server name>
