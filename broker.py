@@ -12,6 +12,12 @@ from pathlib import Path
 import PySigfox.PySigfox as SF
 sys.path.insert(0, os.path.abspath('./modules'))
 
+
+from argparse import ArgumentParser
+parser = ArgumentParser()
+parser.add_argument("-s", "--since", help="reset timestamp to get messages since this point of time (epoche)")
+args = parser.parse_args()
+
 # https://support.sigfox.com/apidocs#operation/getDeviceMessagesListForDevice
 sigfox_timeframe_before_now=((60*60)*24)
 sigfox_timeframe_timestamp=str(int(time.time()))
@@ -45,6 +51,11 @@ try:
 
 	sigfox_timeframe_timestamp_lastcheck=int(sigfox_timeframe_timestamp_lastcheck.strip() or 0)
 	print("Timestamp read: %s" % (sigfox_timeframe_timestamp_lastcheck))
+	# check for --since
+	if args.since:  
+		sigfox_timeframe_timestamp_lastcheck=int(args.since)  if int(args.since) > 0 else 0
+		print("Timestamp reset by command parameter: %s" % str(sigfox_timeframe_timestamp_lastcheck))
+
 except Exception as e :
     print(str(e),' - could not read configuration file')
 
