@@ -29,7 +29,7 @@ sigfox_limit_messages=0
 
 syf_config_filename = "syf.config"
 
-valid_data_length = 4
+valid_data_maxlength = 6
 max_accepted_version = 5
 
 config = configparser.ConfigParser()
@@ -77,7 +77,7 @@ s = SF.PySigfox(sigfox_api_login, sigfox_api_password,proxyDict)
 
 sql3conn = sqlite3.connect(syf_sqlite3_filename)
 sql3c = sql3conn.cursor()
-sql3c.execute("CREATE TABLE IF NOT EXISTS messages ('device' TEXT,'timestamp' INT,'date' TEXT, 'time' TEXT, 'message_raw' TEXT,'temperature' REAL,PRIMARY KEY ('device', 'timestamp'))")
+sql3c.execute("CREATE TABLE IF NOT EXISTS messages ('device' TEXT,'timestamp' INT,'date' TEXT, 'time' TEXT, 'message_raw' TEXT,'temperature' REAL, 'status' TEXT,PRIMARY KEY ('device', 'timestamp'))")
 sql3conn.commit()
 
 try:
@@ -101,6 +101,8 @@ count_all_devices = 0
 count_all_messages = 0
 count_valid_messages = 0
 count_affected_messages = 0
+count_signaltest_messages = 0
+count_alarm_messages = 0
 
 print("Getting list of all devices:")
 for device_type_id in s.device_types_list():
@@ -114,23 +116,35 @@ for device_type_id in s.device_types_list():
 		messages = s.device_messages(last_device['id'], str(sigfox_timeframe_timestamp_lastcheck), str(sigfox_limit_messages))
 		for msg in messages:
 			count_all_messages = ( count_all_messages +1 )
-			if len(msg['data']) == valid_data_length:
+			if len(msg['data']) <= valid_data_maxlength:
 				version = int(msg['data'][:2],16)
 				if version < max_accepted_version:
 					count_valid_messages = ( count_valid_messages +1 )
-					temp_dec = ((int(msg['data'][2:],16)-80)/2)
-					print("Valid message found (id: %s, v.: %s, data: %s @ %s)" % (last_device['id'],str(version), str(temp_dec), str(time.ctime(int(msg['time'])))))
+					temp_dec = ((int(msg['data'][2:4],16)-80)/2)
+					try:
+						message_status = msg['data'][4:6]
+					except:
+						message_status = ""
 
-					sql3c.execute("INSERT OR IGNORE INTO messages VALUES ('%s','%s','%s','%s','%s','%s');" % (str(last_device['id']),str(msg['time']),datetime.utcfromtimestamp(msg['time']).strftime('%Y-%m-%d'),datetime.utcfromtimestamp(msg['time']).strftime('%H:%M:%S'),str(msg['data']),str(temp_dec)))
+					if message_status.upper() == "FF":
+						temp_dec = 255
+						count_signaltest_messages = ( count_signaltest_messages +1 )
+					elif message_status.upper() == "EE":
+						count_alarm_messages = ( count_alarm_messages +1 )
+					else:
+						message_status="00"
+
+					print("Valid message found (id: %s, s.: %s, v.: %s, data: %s @ %s)" % (last_device['id'], message_status, str(version), str(temp_dec), str(time.ctime(int(msg['time'])))))
+
+					sql3c.execute("INSERT OR IGNORE INTO messages VALUES ('%s','%s','%s','%s','%s','%s','%s');" % (str(last_device['id']),str(msg['time']),datetime.utcfromtimestamp(msg['time']).strftime('%Y-%m-%d'),datetime.utcfromtimestamp(msg['time']).strftime('%H:%M:%S'),str(msg['data']),str(temp_dec), message_status))
 					sql3conn.commit()
 					if int(sql3c.rowcount) > 0:
 						count_affected_messages = ( count_affected_messages +1 )
 						rows_affected=rows_affected+(int(sql3c.rowcount))
 						f = open("syf.csv", "a")
-						f.write("\"%s\",%s,\"%s\",\"%s\",\"%s\",%s\n" % (str(last_device['id']),str(msg['time']),datetime.utcfromtimestamp(msg['time']).strftime('%Y-%m-%d'),datetime.utcfromtimestamp(msg['time']).strftime('%H:%M:%S'),str(msg['data']),str(temp_dec)))
+						f.write("\"%s\",%s,\"%s\",\"%s\",\"%s\",%s,\"%s\"\n" % (str(last_device['id']),str(msg['time']),datetime.utcfromtimestamp(msg['time']).strftime('%Y-%m-%d'),datetime.utcfromtimestamp(msg['time']).strftime('%H:%M:%S'),str(msg['data']),str(temp_dec), message_status))
 
-
-					valid_messages = (valid_messages +1)
+						valid_messages = (valid_messages +1)
 
 		print("[%s] Number of messages '%s' (all/valid/inserted): %s/%s/%s" % (last_device['id'],last_device['name'],str(len(messages)),str(valid_messages),str(rows_affected)))
 		print("")
@@ -155,3 +169,5 @@ print("Number of devices                : %s" % str(count_all_devices))
 print("Number of all messages           : %s" % str(count_all_messages))
 print("Number of valid messages         : %s" % str(count_valid_messages))
 print("Numer of relevant messages       : %s" % str(count_affected_messages))
+print("Number of signaltest messages    : %s" % str(count_signaltest_messages))
+print("Number of alarm messages         : %s" % str(count_alarm_messages))
