@@ -54,13 +54,18 @@ class PySigfox:
             out.extend(json.loads(r.text)['data'])
         return out
 
-    def device_messages(self, device_id, after=""):
+    def device_messages(self, device_id, after="", max=""):
         """Return array of messages from device with ID defined in device_id.
            Limit of 100 is the maximum Sigfox API will accept.
         """
         out = []
 
-        url = self.api_url + 'devices/' + device_id + '/messages?limit=100'
+        if int(max) == 0:
+            limit = 100
+        else:
+            limit = int(max)
+
+        url = self.api_url + 'devices/' + device_id + '/messages?limit=' + str(limit)
         if after != "":
             url = url + "&since=%s" % (after)
 

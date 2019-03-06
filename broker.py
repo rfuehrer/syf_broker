@@ -16,6 +16,7 @@ sys.path.insert(0, os.path.abspath('./modules'))
 from argparse import ArgumentParser
 parser = ArgumentParser()
 parser.add_argument("-s", "--since", help="reset timestamp to get messages since this point of time (epoche)")
+parser.add_argument("-l", "--limit", help="limit messages to the given number")
 args = parser.parse_args()
 
 # https://support.sigfox.com/apidocs#operation/getDeviceMessagesListForDevice
@@ -24,6 +25,7 @@ sigfox_timeframe_timestamp=str(int(time.time()))
 syf_csv_filename="syf.csv"
 syf_sqlite3_filename="syf.db"
 sigfox_timeframe_timestamp_lastcheck=0
+sigfox_limit_messages=0
 
 syf_config_filename = "syf.config"
 
@@ -55,6 +57,11 @@ try:
 	if args.since:  
 		sigfox_timeframe_timestamp_lastcheck=int(args.since)  if int(args.since) > 0 else 0
 		print("Timestamp reset by command parameter: %s" % str(sigfox_timeframe_timestamp_lastcheck))
+	if args.limit:  
+		sigfox_limit_messages=int(str(args.limit))
+		sigfox_limit_messages=int(sigfox_limit_messages)  if int(sigfox_limit_messages) > 0 else 0
+		sigfox_limit_messages=int(sigfox_limit_messages)  if int(sigfox_limit_messages) < 100 else 100
+		print("Limit set by command parameter: %s" % str(sigfox_limit_messages))
 
 except Exception as e :
     print(str(e),' - could not read configuration file')
@@ -104,7 +111,7 @@ for device_type_id in s.device_types_list():
 		last_device = device
 		
 		print("== Read messages for device '%s' (id:%s)..." % (last_device['name'],last_device['id']))
-		messages = s.device_messages(last_device['id'], str(sigfox_timeframe_timestamp_lastcheck))
+		messages = s.device_messages(last_device['id'], str(sigfox_timeframe_timestamp_lastcheck), str(sigfox_limit_messages))
 		for msg in messages:
 			count_all_messages = ( count_all_messages +1 )
 			if len(msg['data']) == valid_data_length:
