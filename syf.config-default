@@ -20,6 +20,6 @@ port_https = [port]
 # Placeholder:
 # [DEVICEID]    = device id
 # [DATA]        = received data
-signaltest = [Nachricht]
-no_signaltest = [Nachricht]
-alarm = [Nachricht]
+signaltest = Signaltest detected for [DEVICEID]
+no_signaltest = Signaltest overruled for [DEVICEID]
+alarm = Alarm detected [DEVICEID]: [DATA]
