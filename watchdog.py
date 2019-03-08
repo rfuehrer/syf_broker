@@ -50,6 +50,10 @@ try:
 	proxy_server_https = config.get('proxy_access',"server_https")
 	proxy_port_https = config.get('proxy_access',"port_https")
 
+	template_signaltest = config.get('watchdog',"signaltest")
+	template_nosignaltest = config.get('watchdog',"no_signaltest")
+	template_alarm = config.get('watchdog',"alarm")
+
 except Exception as e :
     print(str(e),' - could not read configuration file')
 
@@ -92,6 +96,7 @@ while True:
 			for msg in messages:
 				count_all_messages = ( count_all_messages +1 )
 				version = int(msg['data'][:2],16)
+				data = int(msg['data'][2:4],16)
 				if version < max_accepted_version:
 					count_valid_messages = ( count_valid_messages +1 )
 					try:
@@ -101,16 +106,20 @@ while True:
 					
 					if message_status.upper() == "FF":
 						count_signaltest_messages = ( count_signaltest_messages +1 )
-						print("Sending SIGNALTEST")
-						send_ifttt(ifttt_key, ifttt_event,"SIGNALTEST")
+						template_signaltest=template_signaltest.replace("[DEVICEID]",last_device['id'])
+						print(template_signaltest)
+						send_ifttt(ifttt_key, ifttt_event,template_signaltest)
 					elif message_status.upper() == "FE":
 						count_alarm_messages = ( count_alarm_messages +1 )
-						print("Sending SIGNALTEST OVERRIDE")
-						send_ifttt(ifttt_key, ifttt_event,"SIGNALTEST OVERRIDE")
+						template_nosignaltest=template_nosignaltest.replace("[DEVICEID]",last_device['id'])
+						print(template_nosignaltest)
+						send_ifttt(ifttt_key, ifttt_event,template_nosignaltest)
 					elif message_status.upper() == "EE":
 						count_alarm_messages = ( count_alarm_messages +1 )
-						print("Sending ALARM")
-						send_ifttt(ifttt_key, ifttt_event,"ALARM")
+						template_alarm=template_alarm.replace("[DEVICEID]",last_device['id'])
+						template_alarm=template_alarm.replace("[DATA]",data)
+						print(template_alarm)
+						send_ifttt(ifttt_key, ifttt_event,template_alarm)
 					else:
 						message_status="00"
 #						print("Sending NORMAL")

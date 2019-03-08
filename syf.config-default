@@ -16,3 +16,10 @@ port_http = [port]
 server_https = [server]
 port_https = [port]
 
+[watchdog]
+# Placeholder:
+# [DEVICEID]    = device id
+# [DATA]        = received data
+signaltest = [Nachricht]
+no_signaltest = [Nachricht]
+alarm = [Nachricht]
