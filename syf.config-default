@@ -3,6 +3,10 @@ username = [username]
 password = [password]
 last_timestamp = 0
 
+[ifttt]
+key=[webhook magic key]
+event=[event type/name]
+
 [proxy_access]
 active = [yes|no]
 username = [username]
