@@ -9,9 +9,10 @@ import configparser
 from datetime import datetime
 from pprint import pprint
 from pathlib import Path
-import PySigfox.PySigfox as SF
-sys.path.insert(0, os.path.abspath('./modules'))
+#import PySigfox as SF
 
+sys.path.insert(0, os.path.abspath('./modules'))
+from pySigfox import pySigfox
 
 from argparse import ArgumentParser
 parser = ArgumentParser()
@@ -73,7 +74,8 @@ else:
     print("Proxy deactivated...")
     proxyDict={ "http":"","https":"" }
 
-s = SF.PySigfox(sigfox_api_login, sigfox_api_password,proxyDict)
+#s = SF.Sigfox(sigfox_api_login, sigfox_api_password,proxyDict)
+s = pySigfox.Sigfox(sigfox_api_login, sigfox_api_password,proxyDict)
 
 sql3conn = sqlite3.connect(syf_sqlite3_filename)
 sql3c = sql3conn.cursor()
@@ -113,7 +115,8 @@ for device_type_id in s.device_types_list():
 		last_device = device
 		
 		print("== Read messages for device '%s' (id:%s)..." % (last_device['name'],last_device['id']))
-		messages = s.device_messages(last_device['id'], str(sigfox_timeframe_timestamp_lastcheck), str(sigfox_limit_messages))
+#		messages = s.device_messages(last_device['id'], str(sigfox_timeframe_timestamp_lastcheck), str(sigfox_limit_messages))
+		messages = s.device_messages(last_device['id'], str(sigfox_limit_messages))
 		for msg in messages:
 			count_all_messages = ( count_all_messages +1 )
 			if len(msg['data']) <= valid_data_maxlength:
